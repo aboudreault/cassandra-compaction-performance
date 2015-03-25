@@ -1,0 +1,68 @@
+{
+    "servers" : [ {
+        "host" : "127.0.0.1",
+        "port" : "7100",
+        "queries" : [
+            {
+                "outputWriters" : [ {
+                    "@class" : "com.googlecode.jmxtrans.model.output.KeyOutWriter",
+                    "settings" : {
+                        "outputFile" : "results/clientrequest-write-95th.txt",
+                        "maxLogFileSize" : "10MB",
+                        "maxLogBackupFiles" : 200,
+                        "typeNames" : ["name"],
+                        "delimiter" : "\t"
+                    }
+                } ],
+                "obj" : "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency",
+                "attr" : ["95thPercentile"],
+                "resultAlias" : "ClientRequest.Write"
+            },
+            {
+                "outputWriters" : [ {
+                    "@class" : "com.googlecode.jmxtrans.model.output.KeyOutWriter",
+                    "settings" : {
+                        "outputFile" : "results/clientrequest-read-95th.txt",
+                        "maxLogFileSize" : "10MB",
+                        "maxLogBackupFiles" : 200,
+                        "typeNames" : ["name"],
+                        "delimiter" : "\t"
+                    }
+                } ],
+                "obj" : "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Latency",
+                "attr" : ["95thPercentile"],
+                "resultAlias" : "ClientRequest.Read"
+            },
+            {
+                "outputWriters" : [ {
+                    "@class" : "com.googlecode.jmxtrans.model.output.KeyOutWriter",
+                    "settings" : {
+                        "outputFile" : "results/compaction-bytescompacted.txt",
+                        "maxLogFileSize" : "10MB",
+                        "maxLogBackupFiles" : 200,
+                        "typeNames" : ["name"],
+                        "delimiter" : "\t"
+                    }
+                } ],
+                "obj" : "org.apache.cassandra.metrics:type=Compaction,name=BytesCompacted",
+                "attr" : ["Count"],
+                "resultAlias" : "Compaction.BytesCompacted"
+            },
+            {
+                "outputWriters" : [ {
+                    "@class" : "com.googlecode.jmxtrans.model.output.KeyOutWriter",
+                    "settings" : {
+                        "outputFile" : "results/compaction-totalcompactionscompleted.txt",
+                        "maxLogFileSize" : "10MB",
+                        "maxLogBackupFiles" : 200,
+                        "typeNames" : ["name"],
+                        "delimiter" : "\t"
+                    }
+                } ],
+                "obj" : "org.apache.cassandra.metrics:type=Compaction,name=TotalCompactionsCompleted",
+                "attr" : ["Count"],
+                "resultAlias" : "Compaction.TotalCompactionsCompleted"
+            }
+        ]
+    } ]
+}

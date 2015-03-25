@@ -1,0 +1,6 @@
+ cql==1.4.0
+ PyYAML==3.11
+ -e git+https://github.com/pcmanus/ccm.git@develop#egg=Package
+cassandra-driver
+blist
+envoy
