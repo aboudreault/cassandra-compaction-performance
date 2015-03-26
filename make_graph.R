@@ -11,7 +11,7 @@ convertBytesInMegabytes <- function(n) {
    return (n/1024/1024)
 }
 
-data = read.table("results/clientrequest-write-95th.txt", col.names=c("type", "value", "time"))
+data = read.table("results/clientrequest-write.data", col.names=c("type", "value", "time"))
 png("results/clientrequest-write-95th.png")
 print(qplot(
             convertMSInMinute(time - min(time)),

@@ -7,12 +7,9 @@ PYTHON = $(BIN)/python
 TMP = $(HERE)/tmp
 OPT = $(HERE)/opt
 RESULTS = $(HERE)/results
-CCM = $(BIN)/ccm
 JMXTRANS = $(BIN)/jmxtrans
 
-CASSANDRA_VERSION = 2.1.3
 CASSANDRA_LIB_DIR = ~/.ccm/repository/$(CASSANDRA_VERSION)/lib/
-CLUSTER_NAME = perftest
 
 MX4J_VERSION = 3.0.2
 MX4J_NAME = mx4j-$(MX4J_VERSION)
@@ -23,7 +20,7 @@ JMXTRANS_NAME = jmxtrans-20121016-151320-36564abc7e
 JMXTRANS_ZIP_NAME = $(JMXTRANS_NAME).zip
 JMXTRANS_URL = https://github.com/downloads/jmxtrans/jmxtrans/$(JMXTRANS_ZIP_NAME)
 
-all: default R ccm mx4j jmxtrans
+all: default R mx4j jmxtrans
 
 sysdeps:
 	sudo apt-get install -y software-properties-common
@@ -34,8 +31,7 @@ sysdeps:
 	sudo apt-get install -y r-base-core
 	sudo pip install virtualenv
 
-clean: stop
-	$(CCM) remove
+clean: stop-jmxtrans
 	rm -rf $(VENV)
 	rm -rf $(OPT)
 	rm -rf $(TMP)
@@ -53,15 +49,6 @@ default: venv
 
 R:
 	sudo R < setup.R --save
-
-ccm:
-	$(CCM) create -v $(CASSANDRA_VERSION) --nodes 1 $(CLUSTER_NAME)
-
-start:
-	$(CCM) start
-
-stop: stop-jmxtrans
-	$(CCM) stop
 
 start-jmxtrans:
 	SECONDS_BETWEEN_RUNS=5 JAR_FILE=$(OPT)/$(JMXTRANS_NAME)/jmxtrans-all.jar $(JMXTRANS) start jmxtrans_query.json
