@@ -19,7 +19,7 @@ table_definition:
     email text,
     last_access timeuuid,
     PRIMARY KEY(username)
-  ) WITH compaction = {'class':'SizeTieredCompactionStrategy'};
+  ) WITH compaction = {'class':'{% strategy %}'};
 
 columnspec:
   - name: username
@@ -41,4 +41,4 @@ insert:
 queries:
   singleuser:
     cql: select * from users where username = ?
-    fields: samerow
+    fields: allrow

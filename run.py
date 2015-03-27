@@ -18,7 +18,11 @@ CLUSTER_NAME = 'perftest'
 THREADS=50
 N=100000
 
-# Each scenario must implemented these patterns
+COMPACTION_STRATEGIES=(
+    'SizeTieredCompactionStrategy',
+)
+
+# Each scenario must implement these patterns
 BASIC_PATTERNS={
     'write': 'insert=1',
 #    'read': "read=1",
@@ -38,33 +42,48 @@ def run(command):
     p = envoy.run(command)
     if p.status_code != 0:
         print(p.std_err)
-        return False
-    return True
+    return p
 
-def run_test(scenario, pattern, variation):
-    ops = "{},{}".format(BASIC_PATTERNS[pattern], variation)
-    print("Running scenario '{}' with pattern: {}".format(
-        os.path.basename(scenario), pattern
+def run_test(scenario, pattern, variation, cs):
+    print("Running scenario '{}' with compaction strategy '' and pattern: {}".format(
+        os.path.basename(scenario), cs, pattern
     ))
-    r = run('ccm node1 stress -- user profile={} ops\({}) n={} -rate threads={}'.format(scenario, ops, N, THREADS))
-    if not r:
+    p = run("bash -c \"sed 's/{%% strategy %%}/%s/' < %s > scenarios/tmp.yaml\"" % (cs, scenario))
+    ops = "{},{}".format(BASIC_PATTERNS[pattern], variation)
+    p = run('ccm node1 stress -- user profile={} ops\({}) n={} -rate threads={}'.format(
+        os.path.abspath('scenarios/tmp.yaml'), ops, N, THREADS)
+    )
+    if p.status_code != 0:
         raise Exception("Error while running stress for: {}".format(scenario))
+    print("Waiting compaction to finish")
+    pending_tasks = 1
+    while pending_tasks != 0:
+        p = run("ccm node1 nodetool compactionstats | cut -d' ' -f3")
+        pending_tasks = int(p.std_out[0])
+        time.sleep(10)
+    
 
 def get_results(match):
     results = glob.glob("{}/*{}*.txt".format(RESULT_DIR, match))
     return results
 
-def rename_result_files(scenario, pattern, variation):
+def rename_result_files(scenario, pattern, variation, cs):
     # Rename all results file to the proper name
     results = get_results('clientrequest*')
     results += get_results('compaction*')
+    cs = cs.lower()
+    scenario_name = os.path.basename(scenario).split('.')[0]
     for result in results:
-        new_name = "{}-{}-{}".format(
+        tmp_file = 'results/tmp'
+        p = run("bash -c \"sed 's/^/{}./' < {} > {}\"" .format(scenario_name, result, tmp_file))
+        print p.command
+        new_name = "{}-{}-{}-{}".format(
+            cs,
             os.path.basename(scenario).split('.')[0],
             pattern,
             os.path.basename(result)
         )
-        os.rename(result, os.path.join(RESULT_DIR, new_name))
+        os.rename(tmp_file, os.path.join(RESULT_DIR, new_name))
 
 def combine_results(match, output):
     results = get_results(match)
@@ -76,18 +95,22 @@ def combine_results(match, output):
 def make_graphes(operation_mode_time_delim):
     # Produce the graph data files
 
-    combine_results('clientrequest-read', 'clientrequest-read.data')
-    combine_results('clientrequest-write', 'clientrequest-write.data')
-    combine_results('compaction-totalcompactionscompleted', 'compaction-totalcompactionscompleted.data')
-    combine_results('compaction-bytescompacted', 'compaction-bytescompacted.data')
+    for cs in COMPACTION_STRATEGIES:
+        for pattern in BASIC_PATTERNS:
+            match = '{}-*-{}'.format(cs.lower(), pattern)
+            prefix = '{}-{}'.format(cs.lower(), pattern)
+            combine_results(match+'-clientrequest-read', prefix+'-clientrequest-read.data')
+            combine_results(match+'-clientrequest-write', prefix+'-clientrequest-write.data')
+            combine_results(match+'-compaction-totalcompactionscompleted', prefix+'-compaction-totalcompactionscompleted.data')
+            combine_results(match+'-compaction-bytescompacted', prefix+'-compaction-bytescompacted.data')
 
     # Find R and generate the graphs
-    r = run("which Rscript")
-    if not r:
+    p = run("which Rscript")
+    if p.status_code != 0:
         raise Exception("Unable to find Rscript. Check your installation.")
 
-    r = run('Rscript {} {}'.format(BUILD_GRAPH_SCRIPT, str(operation_mode_time_delim)))
-    if not r:
+    p = run('Rscript {} {}'.format(BUILD_GRAPH_SCRIPT, str(operation_mode_time_delim)))
+    if p.status_code != 0:
         raise Exception("Error during graphes generation")
     print("Graphes generated.")
 
@@ -97,21 +120,23 @@ def main():
     scenarios_path =  os.path.join(CURRENT_DIR, './scenarios/')
 
     for scenario in os.listdir(scenarios_path):
+        if scenario == 'tmp.yaml': continue
         for pattern in BASIC_PATTERNS:
             for variation in PATTERN_VARIATIONS:
-                # new ccm cluster for each run
-                run('{} stop'.format(CCM))
-                run('{} remove'.format(CCM))
-                run('{} create -v {} --nodes 1 {}'.format(
-                    CCM, CASSANDRA_VERSION, CLUSTER_NAME
-                ))
-                run('{} start'.format(CCM))
-                s = os.path.join(scenarios_path, scenario)
-                run_test(s, pattern, variation)
-                run('make stop-jmxtrans')
-                run('{} stop'.format(CCM))
-                run('{} remove'.format(CCM))
-                rename_result_files(s, pattern, variation)
+                for cs in COMPACTION_STRATEGIES:
+                    # new ccm cluster for each run
+                    run('{} stop'.format(CCM))
+                    run('{} remove'.format(CCM))
+                    run('{} create -v {} --nodes 1 {}'.format(
+                        CCM, CASSANDRA_VERSION, CLUSTER_NAME
+                    ))
+                    run('{} start'.format(CCM))
+                    s = os.path.join(scenarios_path, scenario)
+                    run_test(s, pattern, variation, cs)
+                    run('make stop-jmxtrans')
+                    run('{} stop'.format(CCM))
+                    run('{} remove'.format(CCM))
+                    rename_result_files(s, pattern, variation, cs)
 
     make_graphes(time.time()*1000)
     
