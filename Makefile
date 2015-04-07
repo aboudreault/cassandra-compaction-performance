@@ -56,11 +56,9 @@ start-jmxtrans:
 stop-jmxtrans:
 	JAR_FILE=$(OPT)/$(JMXTRANS_NAME)/jmxtrans-all.jar $(JMXTRANS) stop
 
-test: stop-jmxtrans
+test:
 	rm -rf $(RESULTS)/*
-	$(MAKE) start-jmxtrans
 	$(PYTHON) run.py
-	$(MAKE) stop-jmxtrans
 
 mx4j:
 	echo "Downloading and extracting m4jx... \n"

@@ -35,7 +35,7 @@ PATTERN_VARIATIONS=(
     "",  # no variation
 #    "update=X",  # should not be 1:1, maybe 1:4 ?
 #   "delete=X",
-#   "ttl=X"    
+#   "ttl=X"
 )
 
 def run(command):
@@ -61,29 +61,38 @@ def run_test(scenario, pattern, variation, cs):
         p = run("ccm node1 nodetool compactionstats | cut -d' ' -f3")
         pending_tasks = int(p.std_out[0])
         time.sleep(10)
-    
+
 
 def get_results(match):
-    results = glob.glob("{}/*{}*.txt".format(RESULT_DIR, match))
+    results = glob.glob("{}/{}.txt".format(RESULT_DIR, match))
     return results
 
-def rename_result_files(scenario, pattern, variation, cs):
-    # Rename all results file to the proper name
+def fix_results(scenario, pattern, variation, cs):
+    # Apply time fix and rename result files
     results = get_results('clientrequest*')
     results += get_results('compaction*')
     cs = cs.lower()
     scenario_name = os.path.basename(scenario).split('.')[0]
     for result in results:
-        tmp_file = 'results/tmp'
-        p = run("bash -c \"sed 's/^/{}./' < {} > {}\"" .format(scenario_name, result, tmp_file))
-        print p.command
+        lines = []
+        with open(result, 'r') as r:
+            lines = r.readlines()
+        min_time = min(map(lambda line: long(line.split('\t')[2]), lines))
         new_name = "{}-{}-{}-{}".format(
             cs,
             os.path.basename(scenario).split('.')[0],
             pattern,
             os.path.basename(result)
         )
-        os.rename(tmp_file, os.path.join(RESULT_DIR, new_name))
+        with open(os.path.join(RESULT_DIR, new_name), 'w+') as r:
+            for line in lines:
+                line_parts = line.split('\t')
+                # fix type
+                line_parts[0] = "%s.%s" % (scenario_name, line_parts[0])
+                # fix time
+                line_parts[2] = str(long(line_parts[2]) - min_time)
+                r.write('\t'.join(line_parts)+"\n")
+        os.remove(result)
 
 def combine_results(match, output):
     results = get_results(match)
@@ -99,10 +108,10 @@ def make_graphes(operation_mode_time_delim):
         for pattern in BASIC_PATTERNS:
             match = '{}-*-{}'.format(cs.lower(), pattern)
             prefix = '{}-{}'.format(cs.lower(), pattern)
-            combine_results(match+'-clientrequest-read', prefix+'-clientrequest-read.data')
-            combine_results(match+'-clientrequest-write', prefix+'-clientrequest-write.data')
-            combine_results(match+'-compaction-totalcompactionscompleted', prefix+'-compaction-totalcompactionscompleted.data')
-            combine_results(match+'-compaction-bytescompacted', prefix+'-compaction-bytescompacted.data')
+            combine_results(match+'-clientrequest-read*', prefix+'-clientrequest-read.data')
+            combine_results(match+'-clientrequest-write*', prefix+'-clientrequest-write.data')
+            combine_results(match+'-compaction-totalcompactionscompleted*', prefix+'-compaction-totalcompactionscompleted.data')
+            combine_results(match+'-compaction-bytescompacted*', prefix+'-compaction-bytescompacted.data')
 
     # Find R and generate the graphs
     p = run("which Rscript")
@@ -125,21 +134,26 @@ def main():
             for variation in PATTERN_VARIATIONS:
                 for cs in COMPACTION_STRATEGIES:
                     # new ccm cluster for each run
+                    run('make stop-jmxtrans')
                     run('{} stop'.format(CCM))
                     run('{} remove'.format(CCM))
                     run('{} create -v {} --nodes 1 {}'.format(
                         CCM, CASSANDRA_VERSION, CLUSTER_NAME
                     ))
                     run('{} start'.format(CCM))
+                    # BUG, the following command hangs indefinitely using envoy
+                    import subprocess
+                    p = subprocess.Popen(['make', 'start-jmxtrans'])
+                    p.communicate()
                     s = os.path.join(scenarios_path, scenario)
                     run_test(s, pattern, variation, cs)
                     run('make stop-jmxtrans')
                     run('{} stop'.format(CCM))
                     run('{} remove'.format(CCM))
-                    rename_result_files(s, pattern, variation, cs)
+                    fix_results(s, pattern, variation, cs)
 
     make_graphes(time.time()*1000)
-    
+
 
 if __name__ == '__main__':
     main()
