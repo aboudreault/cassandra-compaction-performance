@@ -19,7 +19,7 @@ table_definition:
     email text,
     last_access timeuuid,
     PRIMARY KEY(username)
-  ) WITH compaction = {'class':'{% strategy %}'};
+  ) WITH compaction = {'class':'{% strategy %}' {% strategyOptions %}};
 
 columnspec:
   - name: username
@@ -39,6 +39,6 @@ insert:
   batchtype: UNLOGGED
 
 queries:
-  singleuser:
+  read:
     cql: select * from users where username = ?
-    fields: allrow
+    fields: multirow

@@ -1,7 +1,9 @@
 library(ggplot2)
 
 args <- commandArgs(TRUE)
-operation_mode_time_delim <- args[1]
+scenario <- args[1]
+pattern <- args[2]
+operation_mode_time_delim <- args[3]
 
 convertMSInMinute <- function(time) {
    return (time/1000/60)
@@ -11,54 +13,80 @@ convertBytesInMegabytes <- function(n) {
    return (n/1024/1024)
 }
 
-data = read.table("results/sizetieredcompactionstrategy-write-clientrequest-write.data", col.names=c("type", "value", "time"))
-png("results/sizetieredcompactionstrategy-write-clientrequest-write-95th.png")
+name = paste(c(scenario, "-", pattern), collapse='')
+
+
+data_filename = paste(c("results/", name, "-ops.data"), collapse='')
+img_filename = paste(c("results/", name, "-ops.png"), collapse='')
+data = read.table(data_filename, col.names=c("type", "value", "time"))
+png(img_filename)
 print(qplot(
             convertMSInMinute(time),
             value, data = data, geom = "line",
             color = type,
-            main='ClientRequest Write Latency',
+            main=paste(scenario, '-', pattern, '- Op/s'),
             xlab="Elapsed time (minute)",
-            ylab="Latency (ms)"
-      ) + scale_colour_discrete(name = "Operation Mode", labels=c("Users", "Test"))
+            ylab="ops"
+      ) + scale_colour_discrete(name = "Operation Mode", labels=c("DTCS", "LCS", "LCS_MOL2", "LCS_MOL5", "STCS"))
 )
 dev.off()
 
-data = read.table("results/sizetieredcompactionstrategy-write-clientrequest-read.data", col.names=c("type", "value", "time"))
-png("results/sizetieredcompactionstrategy-write-clientrequest-read-95th.png")
+data_filename = paste(c("results/", name, "-clientrequest-write.data"), collapse='')
+img_filename = paste(c("results/", name, "-clientrequest-write.png"), collapse='')
+data = read.table(data_filename, col.names=c("type", "value", "time"))
+png(img_filename)
 print(qplot(
             convertMSInMinute(time),
             value, data = data, geom = "line",
             color = type,
-            main='ClientRequest Read Latency',
+            main=paste(scenario, '-', pattern, '- ClientRequest Write Latency'),
             xlab="Elapsed time (minute)",
             ylab="Latency (ms)"
-      ) + scale_colour_discrete(name = "Operation Mode", labels=c("Users", "Test"))
+      ) + scale_colour_discrete(name = "Operation Mode", labels=c("DTCS", "LCS", "LCS_MOL2", "LCS_MOL5", "STCS"))
 )
 dev.off()
 
-data = read.table("results/sizetieredcompactionstrategy-write-compaction-bytescompacted.data", col.names=c("type", "value", "time"))
-png("results/sizetieredcompactionstrategy-write-compaction-bytescompacted.png")
+data_filename = paste(c("results/", name, "-clientrequest-read.data"), collapse='')
+img_filename = paste(c("results/", name, "-clientrequest-read.png"), collapse='')
+data = read.table(data_filename, col.names=c("type", "value", "time"))
+png(img_filename)
 print(qplot(
             convertMSInMinute(time),
-            convertBytesInMegabytes(value), data = data, geom = "line",
+            value, data = data, geom = "line",
             color = type,
-            main='MegaBytes Compacted',
+            main=paste(scenario, '-', pattern, '- ClientRequest Read Latency'),
+            xlab="Elapsed time (minute)",
+            ylab="Latency (ms)"
+      ) + scale_colour_discrete(name = "Operation Mode", labels=c("DTCS", "LCS", "LCS_MOL2", "LCS_MOL5", "STCS"))
+)
+dev.off()
+
+data_filename = paste(c("results/", name, "-compaction-bytescompacted.data"), collapse='')
+img_filename = paste(c("results/", name, "-compaction-bytescompacted.png"), collapse='')
+data = read.table(data_filename, col.names=c("type", "value", "time"))
+png(img_filename)
+print(qplot(
+            convertMSInMinute(time),
+            value, data = data, geom = "line",
+            color = type,
+            main=paste(scenario, '-', pattern, '- MegaBytes Compacted'),
             xlab="Elapsed time (minute)",
             ylab="MegaBytes"
-      ) + scale_colour_discrete(name = "Operation Mode", labels=c("Users", "Test"))
+      ) + scale_colour_discrete(name = "Operation Mode", labels=c("DTCS", "LCS", "LCS_MOL2", "LCS_MOL5", "STCS"))
 )
 dev.off()
 
-data = read.table("results/sizetieredcompactionstrategy-write-compaction-totalcompactionscompleted.data", col.names=c("type", "value", "time"))
-png("results/sizetieredcompactionstrategy-write-compaction-totalcompactionscompleted.png")
+data_filename = paste(c("results/", name, "-compaction-totalcompactionscompleted.data"), collapse='')
+img_filename = paste(c("results/", name, "-compaction-totalcompactionscompleted.png"), collapse='')
+data = read.table(data_filename, col.names=c("type", "value", "time"))
+png(img_filename)
 print(qplot(
             convertMSInMinute(time),
             value, data = data, geom = "line",
             color = type,
-            main='Total Compactions',
+            main=paste(scenario, '-', pattern, '- Total Compactions'),
             xlab="Elapsed time (minute)",
             ylab="Number of Compactions"
-      ) + scale_colour_discrete(name = "Operation Mode", labels=c("Users", "Test"))
+      ) + scale_colour_discrete(name = "Operation Mode", labels=c("DTCS", "LCS", "LCS_MOL2", "LCS_MOL5", "STCS"))
 )
 dev.off()
