@@ -17,12 +17,12 @@ table_definition:
     author text,
     body text,
     PRIMARY KEY(username, tweet_id)
-  ) WITH compaction = {'class':'SizeTieredCompactionStrategy'};
+  ) WITH compaction = {'class':'{% strategy %}' {% strategyOptions %}};
 
 columnspec:
   - name: username
     size: uniform(1..16)
-    population: uniform(1..1000)
+    population: uniform(1..50000)
   - name: tweet_id
     cluster: fixed(1000)
   - name: author
@@ -37,5 +37,5 @@ insert:
 
 queries:
   read:
-    cql: select * from timeline where username = ? LIMIT 25
-    fields: multirow
+    cql: select * from timeline where username = ? LIMIT 10
+    fields: samerow

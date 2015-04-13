@@ -41,4 +41,4 @@ insert:
 queries:
   read:
     cql: select * from users where username = ?
-    fields: multirow
+    fields: samerow
