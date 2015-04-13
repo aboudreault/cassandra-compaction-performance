@@ -1,0 +1,41 @@
+# Performance Testing
+# Small Row
+
+keyspace: perftesting
+
+keyspace_definition: |
+
+  CREATE KEYSPACE perftesting WITH replication = { 'class': 'SimpleStrategy', 'replication_factor':1};
+
+table: timeline
+
+table_definition:
+
+  CREATE TABLE timeline (
+    username text,
+    tweet_id uuid,
+    author text,
+    body text,
+    PRIMARY KEY(username, tweet_id)
+  ) WITH compaction = {'class':'SizeTieredCompactionStrategy'};
+
+columnspec:
+  - name: username
+    size: uniform(1..16)
+    population: uniform(1..1000)
+  - name: tweet_id
+    cluster: fixed(1000)
+  - name: author
+    size: uniform(1..16)
+  - name: body
+    size: uniform(100..250)
+
+insert:
+  partitions: fixed(1)
+  select: fixed(1)/1000
+  batchtype: UNLOGGED
+
+queries:
+  read:
+    cql: select * from timeline where username = ? LIMIT 25
+    fields: multirow

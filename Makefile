@@ -51,7 +51,7 @@ R:
 	sudo R < setup.R --save
 
 start-jmxtrans:
-	SECONDS_BETWEEN_RUNS=5 JAR_FILE=$(OPT)/$(JMXTRANS_NAME)/jmxtrans-all.jar $(JMXTRANS) start jmxtrans_query.json
+	SECONDS_BETWEEN_RUNS=10 JAR_FILE=$(OPT)/$(JMXTRANS_NAME)/jmxtrans-all.jar $(JMXTRANS) start jmxtrans_query.json
 
 stop-jmxtrans:
 	JAR_FILE=$(OPT)/$(JMXTRANS_NAME)/jmxtrans-all.jar $(JMXTRANS) stop

@@ -63,7 +63,7 @@ def run_test(scenario, pattern, variation, cs):
     sed = r"sed \"s/{%% strategyOptions %%}/%s/\" < scenarios/tmp_.yaml > scenarios/tmp.yaml" % (cs[1],)
     p = run("bash -c \"%s\"" % sed)
     ops = "{},{}".format(BASIC_PATTERNS[pattern], variation)
-    p = run('ccm node1 stress -- user profile={} ops\({}) n={} -rate threads={}'.format(
+    p = run('ccm node1 stress -- user profile={} ops\({}\) n={} -rate threads={}'.format(
         os.path.abspath('scenarios/tmp.yaml'), ops, N, THREADS)
     )
     output = p.std_out
@@ -104,7 +104,7 @@ def fix_results(scenario, pattern, variation, cs):
             for line in lines:
                 line_parts = line.split('\t')
                 # fix type
-                line_parts[0] = "%s.%s" % (cs, line_parts[0])
+                line_parts[0] = "%s\t%s" % (cs, line_parts[0])
                 # fix time
                 line_parts[2] = str(long(line_parts[2]) - min_time)
                 r.write('\t'.join(line_parts)+"\n")
@@ -117,13 +117,16 @@ def write_stress_stats(scenario, pattern, variation, cs, output):
     cs = cs[0].lower()
     with open(os.path.join(RESULT_DIR, '{}-{}-{}-{}.txt'.format(
             cs, scenario_name, pattern, 'ops')), 'w+') as f:
+        last_time = 0
         for line in lines:
             match = regex.match(line)
             if match:
                 metrics = match.group(0).split(',')
                 ops = metrics[2]
-                t = metrics[11]
-                f.write("{}.ops\t{}\t{}\n".format(cs, ops, long(float(t)*1000)))
+                t = long(float(metrics[11])*1000)
+                if last_time == 0 or (t - last_time) < 10000:  # write a metric every 10 seconds
+                    f.write("{}\tops\t{}\t{}\n".format(cs, ops, t))
+                    last_time = t
 
 def combine_results(match, output):
     results = get_results(match)
