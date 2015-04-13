@@ -179,7 +179,7 @@ def main():
                     # BUG, the following command hangs indefinitely using envoy
                     p = subprocess.Popen(['make', 'start-jmxtrans'])
                     p.communicate()
-                    time.sleep(30)
+                    time.sleep(60)
                     output = run_test(s, pattern, variation, cs)
                     write_stress_stats(s, pattern, variation, cs, output)
                     run('make stop-jmxtrans')
