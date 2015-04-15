@@ -67,7 +67,7 @@ data = read.table(data_filename, col.names=c("type", "metric", "value", "time"))
 png(img_filename, height=800, width=1200)
 print(qplot(
             convertMSInMinute(time),
-            value, data = data, geom = "line",
+            convertBytesInMegabytes(value), data = data, geom = "line",
             color = type,
             main=paste(scenario, '-', pattern, '- MegaBytes Compacted'),
             xlab="Elapsed time (minute)",

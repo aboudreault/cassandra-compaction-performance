@@ -19,7 +19,7 @@ CLUSTER_NAME = 'perftest'
 
 # test constants
 THREADS=50
-N=10000000
+N=20000000
 
 STRESS_LINE_REGEX = r"^([\d\.]+\s*,\s*)+"
 
@@ -124,7 +124,7 @@ def write_stress_stats(scenario, pattern, variation, cs, output):
                 metrics = match.group(0).split(',')
                 ops = metrics[2]
                 t = long(float(metrics[11])*1000)
-                if last_time == 0 or (t - last_time) < 10000:  # write a metric every 10 seconds
+                if last_time == 0 or (t - last_time) > 10000:  # write a metric every 10 seconds
                     f.write("{}\tops\t{}\t{}\n".format(cs, ops, t))
                     last_time = t
 

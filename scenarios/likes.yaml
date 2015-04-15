@@ -1,0 +1,34 @@
+# Performance Testing
+
+keyspace: perftesting
+
+keyspace_definition: |
+
+  CREATE KEYSPACE perftesting WITH replication = { 'class': 'SimpleStrategy', 'replication_factor':1};
+
+table: likes_per_post
+
+table_definition:
+
+  CREATE TABLE likes_per_post (
+    post uuid,
+    username text,
+    PRIMARY KEY(post)
+  ) WITH compaction = {'class':'{% strategy %}' {% strategyOptions %}};
+
+columnspec:
+  - name: post
+    population: uniform(1..5000)
+  - name: username
+    size: uniform(1..16)
+    cluster: fixed(5000)
+
+insert:
+  partitions: fixed(1)
+  select: fixed(1)/5000
+  batchtype: UNLOGGED
+
+queries:
+  read:
+    cql: select * from likes_per_post where post = ? LIMIT 5
+    fields: samerow
