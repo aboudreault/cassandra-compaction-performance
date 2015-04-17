@@ -1,0 +1,37 @@
+# Performance Testing
+
+keyspace: perftesting
+
+keyspace_definition: |
+
+  CREATE KEYSPACE perftesting WITH replication = { 'class': 'SimpleStrategy', 'replication_factor':1};
+
+table: temperature
+
+table_definition:
+
+  CREATE TABLE temperature (
+    weatherstation_id text,
+    event_time timestamp,
+    temperature text,
+    PRIMARY KEY (weatherstation_id, event_time)
+  ) WITH CLUSTERING ORDER BY (event_time DESC) AND compaction = {'class':'{% strategy %}' {% strategyOptions %}};
+
+columnspec:
+  - name: weatherstation_id
+    size: uniform(1..10)
+    population: uniform(1..50000)
+  - name: event_time
+    cluster: fixed(1000)
+  - name: temperature
+    size: uniform(1..5)
+
+insert:
+  partitions: fixed(1)
+  select: fixed(1)/1000
+  batchtype: UNLOGGED
+
+queries:
+  read:
+    cql: select * from temperature where weatherstation_id = ? LIMIT 10
+    fields: samerow
