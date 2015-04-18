@@ -11,17 +11,21 @@ table: likes_per_post
 table_definition:
 
   CREATE TABLE likes_per_post (
-    post uuid,
+    post_id text,
     username text,
-    PRIMARY KEY(post)
+    comment text,
+    PRIMARY KEY(post_id, username)
   ) WITH compaction = {'class':'{% strategy %}' {% strategyOptions %}};
 
 columnspec:
-  - name: post
-    population: uniform(1..5000)
+  - name: post_id
+    size: gaussian(1..50)
+    population: uniform(1..10000)
   - name: username
     size: uniform(1..16)
     cluster: fixed(5000)
+  - name: comment
+    size: fixed(1)
 
 insert:
   partitions: fixed(1)
@@ -30,5 +34,5 @@ insert:
 
 queries:
   read:
-    cql: select * from likes_per_post where post = ? LIMIT 5
+    cql: select * from likes_per_post where post_id = ? LIMIT 10
     fields: samerow
