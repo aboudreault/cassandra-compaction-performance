@@ -12,17 +12,16 @@ table_definition:
 
   CREATE TABLE likes_per_post (
     post_id text,
-    username text,
+    user_id uuid,
     comment text,
-    PRIMARY KEY(post_id, username)
+    PRIMARY KEY(post_id, user_id)
   ) WITH compaction = {'class':'{% strategy %}' {% strategyOptions %}};
 
 columnspec:
   - name: post_id
     size: gaussian(1..50)
-    population: uniform(1..10000)
-  - name: username
-    size: uniform(1..16)
+    population: uniform(1..5000)
+  - name: user_id
     cluster: fixed(5000)
   - name: comment
     size: fixed(1)
