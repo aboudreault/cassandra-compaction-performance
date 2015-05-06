@@ -21,7 +21,7 @@ CLUSTER_NAME = 'perftest'
 THREADS=50
 N=20000000
 
-STRESS_LINE_REGEX = r"^([\d\.]+\s*,\s*)+"
+STRESS_LINE_REGEX = r"^total,\s*([\d\.]+\s*,\s*)+"
 
 COMPACTION_STRATEGIES=(
     ('SizeTieredCompactionStrategy', ''),
@@ -48,6 +48,7 @@ PATTERN_VARIATIONS=(
 )
 
 def run(command):
+    print command
     p = envoy.run(command)
     if p.status_code != 0:
         print(p.std_err)
